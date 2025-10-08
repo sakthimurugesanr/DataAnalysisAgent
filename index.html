@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Data Analysis Agent</title>
+  <link rel="stylesheet" href="index.css" />
+
+</head>
+
+<body>
+  <h1>Data Analysis Agent</h1>
+
+  <div class="card">
+    <label>API Key</label>
+    <input type="password" id="api_key" placeholder="Enter your OpenRouter API key" />
+
+    <label>Model</label>
+    <input type="text" id="model" value="google/gemini-2.5-flash" />
+
+    <label>Upload Questions.txt</label>
+    <input type="file" id="questions_file" accept=".txt" />
+
+    <label>Upload Aditional files (optional)</label>
+    <input type="file" id="csv_file" accept=".csv" />
+
+    <label>Upload Image (optional)</label>
+    <input type="file" id="image_file" accept="image/png, image/jpeg, image/webp" />
+
+    <button onclick="submitForm()">Submit</button>
+  </div>
+
+  <div class="card" id="output">
+    <h2>Response</h2>
+    <div id="response_area">Waiting for input...</div>
+  </div>
+
+  <script>
+    async function submitForm() {
+      const apiKey = document.getElementById("api_key").value;
+      const model = document.getElementById("model").value;
+      const qFile = document.getElementById("questions_file").files[0];
+      const csvFile = document.getElementById("csv_file").files[0];
+      const imgFile = document.getElementById("image_file").files[0];
+
+      if (!apiKey || !model || !qFile) {
+        alert("API key, model, and questions.txt are required!");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("api_key", apiKey);
+      formData.append("model", model);
+      formData.append("file", qFile);
+      if (csvFile) formData.append("csv_file", csvFile);
+      if (imgFile) formData.append("image_file", imgFile);
+
+      document.getElementById("response_area").innerHTML = "Processing... ⏳";
+
+      try {
+        const res = await fetch("https://unretributory-yvonne-unexcusably.ngrok-free.dev/api", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        renderResponse(data);
+      } catch (err) {
+        document.getElementById("response_area").innerHTML = "Error: " + err.message;
+      }
+    }
+
+    function normalizeAnswer(raw) {
+      if (!raw) return { answers: [] };
+
+      if (typeof raw === "object" && raw.answers) {
+        return raw;
+      }
+
+      if (typeof raw === "string") {
+        let cleaned = raw.replace(/```json/g, "").replace(/```/g, "").trim();
+        try {
+          let parsed = JSON.parse(cleaned);
+          if (parsed.answers) return parsed;
+        } catch { }
+        return { answers: [cleaned] };
+      }
+
+      if (raw.raw_response?.choices?.[0]?.message?.content) {
+        let inner = raw.raw_response.choices[0].message.content;
+        return normalizeAnswer(inner);
+      }
+
+      return { answers: [] };
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text);
+      alert("Base64 code copied!");
+    }
+
+    function downloadImage(base64, filename = "chart.png") {
+      const link = document.createElement("a");
+      link.href = "data:image/png;base64," + base64;
+      link.download = filename;
+      link.click();
+    }
+
+    function renderResponse(data) {
+      let html = "";
+
+      html += `<h3>Meta Info</h3>`;
+      html += `<p><strong>Elapsed:</strong> <span class="text-green"> ${data.elapsed_time_seconds?.toFixed(2)} sec </span></p>`;
+      if (data.url) html += `<p><strong>URL:</strong> <a href="${data.url}" target="_blank">${data.url}</a></p>`;
+
+      if (document.getElementById("image_file").files[0]) {
+        const imgFile = document.getElementById("image_file").files[0];
+        const imgUrl = URL.createObjectURL(imgFile);
+        html += `<h3>Uploaded Image</h3>`;
+        html += `<img src="${imgUrl}" alt="Uploaded Image" style="max-width:300px; border:1px solid #ccc; border-radius:8px; margin-bottom:10px;" />`;
+      }
+
+      html += `<h3>Q&A</h3>`;
+      const formattedArr = [];
+
+      (data.results || []).forEach((r, idx) => {
+        html += `<div class='qa-block'><strong>Q${idx + 1}:</strong> ${r.question}<br>`;
+
+        let parsed = normalizeAnswer(r.answer);
+
+        if (parsed && parsed.answers) {
+          html += `<strong>A:</strong> <span class="text-green">${parsed.answers.join("<br>")}</span><br>`;
+          formattedArr.push(parsed.answers.length === 1 ? parsed.answers[0] : parsed.answers);
+        } else {
+          formattedArr.push(null);
+        }
+
+        const imgData = r.image || (r.answer && r.answer.image);
+        if (imgData) {
+          const cleanBase64 = imgData.replace(/^data:image\/\w+;base64,/, "");
+          html += `<img src="data:image/png;base64,${cleanBase64}" alt="Generated chart" /><br>`;
+          html += `<button class="icon-btn copy-btn" onclick="copyToClipboard('${cleanBase64}')">📋 Copy Base64</button>`;
+          html += `<button class="icon-btn download-btn" onclick="downloadImage('${cleanBase64}', 'chart.png')">⬇️ Download</button>`;
+          formattedArr.push(cleanBase64);
+        }
+
+        html += "</div>";
+      });
+
+      html += `<h3>Formatted Response</h3>`;
+      html += `<div class='response-json'>${JSON.stringify(formattedArr)}</div>`;
+
+      html += `<details>
+                 <summary>Raw JSON</summary>
+                 <div class='response'>${JSON.stringify(data, null, 2)}</div>
+               </details>`;
+
+      document.getElementById("response_area").innerHTML = html;
+    }
+  </script>
+</body>
+
+</html>

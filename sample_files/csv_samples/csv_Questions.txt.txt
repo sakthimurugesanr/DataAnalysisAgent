@@ -1,0 +1,7 @@
+Which AI model has the highest performance score, and what is its price?
+
+Which year saw the release of the most top-performing AI models?
+
+What is the average price of AI models released after 2023?
+
+Generate a scatter plot comparing Performance_Score vs. Price_USD_Million for all models.

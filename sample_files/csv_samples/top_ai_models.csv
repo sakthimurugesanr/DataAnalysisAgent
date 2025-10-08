@@ -1,0 +1,16 @@
+Model,Year,Performance_Score,Price_USD_Million
+GPT-4,2023,95,10
+Claude 3,2024,92,9
+Gemini 1.5,2024,93,8
+LLaMA 3,2024,91,7
+Mistral 8x7B,2023,89,6
+GPT-3.5,2022,87,4
+Claude 2,2023,88,5
+Gemini Pro,2023,90,6
+PaLM 2,2022,85,4
+GPT-J,2021,80,2
+Falcon 180B,2023,86,12
+LLaMA 2,2023,84,7
+Anthropic 1,2022,82,3
+Cohere Command R,2023,83,5
+DeepSeek V2,2024,94,11

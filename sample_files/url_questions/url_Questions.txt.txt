@@ -1,0 +1,6 @@
+https://en.wikipedia.org/wiki/2020_Summer_Olympics_medal_table
+
+Which country ranked #1 in total medals?
+How many countries won more than 10 gold medals?
+Which country ranked #5 and how many total medals did they win?
+draw a scatterplot of Gold vs Total medals.   
